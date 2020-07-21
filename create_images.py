@@ -54,7 +54,7 @@ else:
     otb_list = ["Basketball"]
 
 # size to crop images to (square, height = width)
-crop_size = 256
+crop_size = 128
 
 
 # empty results image directory
@@ -83,7 +83,8 @@ for video in otb_list:
         # load base & target image paths
         base_path = img_list[i]
         base_label = labels[i]
-        targets = [img_list[i+1]]
+        target_img_paths = [img_list[i+1]]
+        target_labels = [labels[i+1]]
 
         x_obj, y_obj, width_obj, height_obj = base_label
         x_center = x_obj + width_obj//2
@@ -94,30 +95,47 @@ for video in otb_list:
         base_img_cropped = base_img[y_crop : y_crop + crop_size,
                                     x_crop : x_crop + crop_size]
         # TODO ^ probably some out of bounds case there, also possibly y_crop or x_crop is negative
-        # TODO save cropped base image in resultsdir, give base_path_cropped to csv.write line below
+        
+        # save base image
+        base_filename = "t" + str(i) + "_base.jpg"
+        base_path_cropped = os.path.join(resultsdir, base_filename)
+        cv2.imwrite(base_path_cropped, base_img_cropped)
 
-
-        # for each target, create base and target cropped imgs in resultsdir
+        # for each target, create cropped img in resultsdir
         # and add line in results.csv
-        for i in range(len(targets)):
-           
+        for j in range(len(target_img_paths)):
+            # get target path & label
+            target_path = target_img_paths[j]
+            target_label = target_labels[j]
+            x_obj_t, y_obj_t, width_obj_t, height_obj_t = target_label
 
-            quit()
-            # TODO SAVE CROPPED TARGET IN RESULTSDIR AND GIVE PATHS TO CSV.WRITE BELOW
+            # crop target
+            target_img = cv2.imread(target_path, -1)
+            target_img_cropped = target_img[y_crop : y_crop + crop_size,
+                                            x_crop : x_crop + crop_size]
+            # TODO again, probably an out of bounds case here
+            
+            # save target image
+            target_filename = "t" + str(i) + "_target" + str(j) + ".jpg"
+            target_path_cropped = os.path.join(resultsdir, target_filename)
+            cv2.imwrite(target_path_cropped, target_img_cropped)
+            
+            # obtain object's motion from base to target (from object center)
+            x_center_t = x_obj_t + width_obj_t//2
+            y_center_t = y_obj_t + height_obj_t//2
+            vx = x_center_t - x_center
+            vy = y_center_t - y_center
 
+            # display images
+            print("t = " + str(i) + ", cropped images to:")
+            print("y: " + str(y_crop)  + " to " + str(y_crop + crop_size))
+            print("x: " + str(x_crop)  + " to " + str(x_crop + crop_size))
+            print("vx, vy = ", vx, vy)
+            
             csv.write(base_path_cropped + ","
                       + target_path_cropped + ","
                       + str(vx) + ","
                       + str(vy) + "\n")
-
-
-        # display images
-        cv2.imshow("img_base, t = " + str(i), img_base)
-        cv2.imshow("img_target, t = " + str(i), img_target)
-        while cv2.waitKey(0) != 32: # spacebar
-            pass
-        cv2.destroyAllWindows()
-
 
 
 
