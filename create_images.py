@@ -92,10 +92,12 @@ for video in otb_list:
         x_crop = x_center - crop_size//2
         y_crop = y_center - crop_size//2
         base_img = cv2.imread(base_path, -1)
-        base_img_cropped = base_img[y_crop : y_crop + crop_size,
-                                    x_crop : x_crop + crop_size]
-        # TODO ^ probably some out of bounds case there, also possibly y_crop or x_crop is negative
-        
+        base_img_cropped = func_img.crop_zero_padding(
+            img=base_img,
+            x_crop=x_crop,
+            y_crop=y_crop,
+            crop_size=crop_size)
+
         # save base image
         base_filename = "t" + str(i) + "_base.jpg"
         base_path_cropped = os.path.join(resultsdir, base_filename)
@@ -111,10 +113,12 @@ for video in otb_list:
 
             # crop target
             target_img = cv2.imread(target_path, -1)
-            target_img_cropped = target_img[y_crop : y_crop + crop_size,
-                                            x_crop : x_crop + crop_size]
-            # TODO again, probably an out of bounds case here
-            
+            target_img_cropped = func_img.crop_zero_padding(
+                img=target_img,
+                x_crop=x_crop,
+                y_crop=y_crop,
+                crop_size=crop_size)
+
             # save target image
             target_filename = "t" + str(i) + "_target" + str(j) + ".jpg"
             target_path_cropped = os.path.join(resultsdir, target_filename)
@@ -127,7 +131,9 @@ for video in otb_list:
             vy = y_center_t - y_center
 
             # display images
-            print("t = " + str(i) + ", cropped images to:")
+            print("BASE: " + str(base_path))
+            print("TARGETS: " + str(target_img_paths))
+            print("cropped images to:")
             print("y: " + str(y_crop)  + " to " + str(y_crop + crop_size))
             print("x: " + str(x_crop)  + " to " + str(x_crop + crop_size))
             print("vx, vy = ", vx, vy)
