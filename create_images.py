@@ -37,6 +37,7 @@ on_server = torch.cuda.is_available()
 # OTB dataset directory
 if on_server:
     imdir = "/home/datasets/OTB/"
+    # TODO ^^ this must be train, validation, test folder (needs to contain "Basketball" directory)
 else:
     imdir = "../OTB/"
 
@@ -49,12 +50,12 @@ else:
 # list of OTB videos to use
 # must correspond to the name of the folder within imdir
 if on_server:
-    otb_list = ["Basketball"]
+    otb_list = ["Basketball", "Biker"]
 else:
-    otb_list = ["Basketball"]
+    otb_list = ["Basketball", "Biker"]
 
 # size to crop images to (square, height = width)
-crop_size = 128
+crop_size = 256
 
 
 # empty results image directory
@@ -70,21 +71,51 @@ for video in otb_list:
 
     # get lists of images and their labels
     img_list = func_file.get_files_sorted(
-        directory=imdir + "Basketball/img/",
+        directory=imdir + video + "/img/",
         extension=".jpg")
     labels = np.genfromtxt(
-        fname=imdir + "Basketball/groundtruth_rect.txt",
+        fname=imdir + video + "/groundtruth_rect.txt",
         dtype="int",
         delimiter=",")
     num_imgs = len(img_list)
     
     # loop through all frames
     for i in range(num_imgs):
-        # load base & target image paths
+        # load base image path
         base_path = img_list[i]
         base_label = labels[i]
-        target_img_paths = [img_list[i+1]]
-        target_labels = [labels[i+1]]
+
+        # make list of all target paths for base at frame i
+        target_img_paths = []
+        target_labels = []
+
+        # future frames:
+        # i + 1
+        if i < num_imgs - 1:
+            target_img_paths.append(img_list[i+1])
+            target_labels.append(labels[i+1])
+        # i + 2
+        if i < num_imgs - 2:
+            target_img_paths.append(img_list[i+2])
+            target_labels.append(labels[i+2])
+        # i + 3
+        if i < num_imgs - 3:
+            target_img_paths.append(img_list[i+3])
+            target_labels.append(labels[i+3])
+
+        # past frames:
+        # i - 1
+        if i >= 1:
+            target_img_paths.append(img_list[i-1])
+            target_labels.append(labels[i-1])
+        # i - 2
+        if i >= 2:
+            target_img_paths.append(img_list[i-2])
+            target_labels.append(labels[i-2])
+        # i - 3
+        if i >= 3:
+            target_img_paths.append(img_list[i-3])
+            target_labels.append(labels[i-3])
 
         x_obj, y_obj, width_obj, height_obj = base_label
         x_center = x_obj + width_obj//2
@@ -99,7 +130,7 @@ for video in otb_list:
             crop_size=crop_size)
 
         # save base image
-        base_filename = "t" + str(i) + "_base.jpg"
+        base_filename = video + "_t" + str(i) + "_base.jpg"
         base_path_cropped = os.path.join(resultsdir, base_filename)
         cv2.imwrite(base_path_cropped, base_img_cropped)
 
@@ -120,7 +151,7 @@ for video in otb_list:
                 crop_size=crop_size)
 
             # save target image
-            target_filename = "t" + str(i) + "_target" + str(j) + ".jpg"
+            target_filename = video + "_t" + str(i) + "_target" + str(j) + ".jpg"
             target_path_cropped = os.path.join(resultsdir, target_filename)
             cv2.imwrite(target_path_cropped, target_img_cropped)
             
@@ -130,9 +161,9 @@ for video in otb_list:
             vx = x_center_t - x_center
             vy = y_center_t - y_center
 
-            # display images
+            # print datapoint to command line and add to results.csv
             print("BASE: " + str(base_path))
-            print("TARGETS: " + str(target_img_paths))
+            print("TARGET: " + str(target_path))
             print("cropped images to:")
             print("y: " + str(y_crop)  + " to " + str(y_crop + crop_size))
             print("x: " + str(x_crop)  + " to " + str(x_crop + crop_size))
