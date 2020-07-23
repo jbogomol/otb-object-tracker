@@ -36,10 +36,9 @@ on_server = torch.cuda.is_available()
 
 # OTB dataset directory
 if on_server:
-    imdir = "/home/datasets/OTB/"
-    # TODO ^^ this must be train, validation, test folder (needs to contain "Basketball" directory)
+    imdir = "/home/datasets/OTB/train/"
 else:
-    imdir = "../OTB/"
+    imdir = "../OTB/train/"
 
 # directory to store results in
 if on_server:
