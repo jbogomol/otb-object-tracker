@@ -10,13 +10,19 @@ import cv2
 import numpy as np
 
 
-# crops an image to a given size from top-left point x_crop, y_crop,
-# returns the resulting image (numpy array)
-# args:
-#       img - numpy array representation of image to crop
-#       x_crop, y_crop - integer x, y point, top-left of cropped image
-#       crop_size - integer size of image to crop (crop_size = width = height)
 def crop_zero_padding(img, x_crop, y_crop, crop_size):
+    """
+    Crops an image to a given size from top-left point x_crop, y_crop.
+    Pads with zeros if x_crop or y_crop is out of bounds.
+
+    Args
+        img: numpy array, the image to crop
+        x_crop, y_crop: int x, y point, top-left of cropped image
+        crop_size: int, size of resulting image (crop_size = width = height)
+
+    Returns the resulting image as a numpy array
+    """
+
     height, width, n_channels = img.shape
     img_padded = np.zeros([height + 2 * crop_size,
                            width + 2 * crop_size,
