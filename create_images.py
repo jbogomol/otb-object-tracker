@@ -14,6 +14,7 @@
 #             - Frame t is the base frame.
 #             - Frames t+1, t+2, t+3, t-1, t-2, t-3 are all used as target
 #               frames.
+# Compiles results into csv files containing the image paths and ground truths.
 #
 # Usage
 # > python create_images.py
@@ -60,13 +61,13 @@ crop_size = 256
 # empty results image directory
 func_file.empty_folder(resultsdir)
 
-# initialize results.csv file
-csv_path = os.path.join(resultsdir, "results.csv")
-csv = open(csv_path, "w+")
-
 # loop through all videos on otb_list
 for video in otb_list:
     print(video)
+
+    # initialize results.csv file
+    csv_path = os.path.join(resultsdir, video + "_results.csv")
+    csv = open(csv_path, "w+")
 
     # get lists of images and their labels
     img_list = func_file.get_files_sorted(
@@ -160,14 +161,7 @@ for video in otb_list:
             vx = x_center_t - x_center
             vy = y_center_t - y_center
 
-            # print datapoint to command line and add to results.csv
-            print("BASE: " + str(base_path))
-            print("TARGET: " + str(target_path))
-            print("cropped images to:")
-            print("y: " + str(y_crop)  + " to " + str(y_crop + crop_size))
-            print("x: " + str(x_crop)  + " to " + str(x_crop + crop_size))
-            print("vx, vy = ", vx, vy)
-            
+            # add datapoint to csv file
             csv.write(base_path_cropped + ","
                       + target_path_cropped + ","
                       + str(vx) + ","
