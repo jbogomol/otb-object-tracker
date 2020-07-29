@@ -11,18 +11,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class NetworkClassifier(nn.Module)
+class NetworkClassifier(nn.Module):
     """
     Class representing the network to train.
     Layers are class attributes and called by the forward method.
     """
 
-    def __init__(self, max_motion=32):
+    def __init__(self):
         """
         Class constructor, initialize network layers.
         """
         
-        super(Network, self).__init__()
+        super(NetworkClassifier, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=6, out_channels=16,
                                kernel_size=3, stride=2)
         self.conv1_bn = nn.BatchNorm2d(num_features=16)
@@ -32,11 +32,10 @@ class NetworkClassifier(nn.Module)
         self.conv3 = nn.Conv2d(in_channels=32, out_channels=64,
                                kernel_size=3, stride=2)
         self.conv3_bn = nn.BatchNorm2d(num_features=64)
-        self.fc1 = nn.Linear(in_features=64*31*31, out_features=120)
-        self.fc2 = nn.Linear(in_features=120, out_features=60)
-        self.out = nn.Linear(in_features=60, out_features=42)
+        self.fc1 = nn.Linear(in_features=64*31*31, out_features=240)
+        self.fc2 = nn.Linear(in_features=240, out_features=150)
+        self.out = nn.Linear(in_features=150, out_features=2*(2*32+1))
 
-        self.max_motion = max_motion
 
     def forward(self, t):
         """
@@ -50,19 +49,17 @@ class NetworkClassifier(nn.Module)
                 images are concatenated in the channels dimension
 
         Return the network's rank-3 output torch.Tensor with the shape:
-            ([<batch_size>,<2>,<2 * max_motion + 1>])
+            ([<batch_size>,<2>,<2 * 32 + 1>])
             Where batch size dimension indicates the data point's index within
             the batch,
             the second dimension indicates the direction of the motion, either
             x (index 0) or y (index 1),
             and the third dimension is the one-hot encoded prediction of the
-            object's motion in the x or y dimension, from -max_motion to
-            max_motion (inclusive).
+            object's motion in the x or y dimension, from -32 to 32, inclusive.
 
             E.g.
-            for a batch size of 64 and a maximum object motion of 10 pixels
-            in any direction, the output tensor would be of shape:
-                output.shape => torch.Size([64, 2, 21])
+            for a batch size of 64, the output tensor would be of shape:
+                output.shape => torch.Size([64, 2, 65])
             The predicted motion of the 42nd data point in the x direction
             is given by
                 argmax(output[41, 0, :])
@@ -96,7 +93,7 @@ class NetworkClassifier(nn.Module)
 
         # (6) output layer
         t = self.out(t)
-        t = t.reshape(-1, 2, 2 * self.max_motion + 1)
+        t = t.reshape(-1, 2, 2 * 32 + 1)
         return t
 
 
