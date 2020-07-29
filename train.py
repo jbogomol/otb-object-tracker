@@ -18,6 +18,7 @@ import func_file
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+import torchvision
 import numpy as np
 import os
 import cv2
@@ -39,14 +40,52 @@ else:
     datadir = "../OTB_data/results/"
 
 
+# keep same random seed for replicable results
+random_seed = 1
+np.random.seed(random_seed)
+torch.manual_seed(random_seed)
+
+
 # paths to csv files
 csv_path_list = func_file.get_files_sorted(directory=datadir, extension=".csv")
+np.random.shuffle(csv_path_list)
 
 # create pytorch datasets for train, validation, test. split by video
+n_videos = len(csv_path_list)
+n_videos_test = n_videos // 3
+n_videos_validation = (n_videos - n_videos_test) // 6
+n_videos_train = n_videos - n_videos_test - n_videos_validation
+
+# initialize empty sets
+train_set = torchvision.datasets.FakeData(size=0)
+validation_set = torchvision.datasets.FakeData(size=0)
+test_set = torchvision.datasets.FakeData(size=0)
+
+# fill datasets video by video, looping through all csv paths
+for i, csv_path in enumerate(csv_path_list):
+    # get set for current csv path
+    set_i = datasets.TrackingDataset(csv_path=csv_path)
+
+    # determine where to put set
+    if i < n_videos_train:
+        train_set = torch.utils.data.dataset.ConcatDataset(
+                        [train_set, set_i])
+    elif i < n_videos_train + n_videos_validation:
+        validation_set = torch.utils.data.dataset.ConcatDataset(
+                        [validation_set, set_i])
+    else:
+        test_set = torch.utils.data.dataset.ConcatDataset(
+                        [test_set, set_i])
 
 
-
-
+# should have correct datasets by now
+print("n_videos: ", n_videos)
+print("n_videos_train: ", n_videos_train)
+print("n_videos_validation: ", n_videos_validation)
+print("n_videos_test: ", n_videos_test)
+print("len(train_set): ", len(train_set))
+print("len(validation_set): ", len(validation_set))
+print("len(test_set): ", len(test_set))
 
 
 
