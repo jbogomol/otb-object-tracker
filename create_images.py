@@ -62,11 +62,7 @@ otb_list = func_file.get_all_dirs_in(
 for video in otb_list:
     print(video)
 
-    # initialize results.csv file
-    csv_path = os.path.join(resultsdir, video + "_results.csv")
-    csv = open(csv_path, "w+")
-
-    # get lists of images and their labels
+    # get lists of images and their labels from groundtruth_rect.txt
     img_list = func_file.get_files_sorted(
         directory=imdir + video + "/img/",
         extension=".jpg")
@@ -78,6 +74,7 @@ for video in otb_list:
             delimiter=",")
     except PermissionError:
         print("permission error reading " + labels_path)
+        # don't have permission to read groundtruth_rect.txt, skip this video
         continue
     num_imgs = len(img_list)
     # delimiter could be tab also
@@ -88,7 +85,13 @@ for video in otb_list:
             delimiter="\t")
         if labels.shape != (num_imgs, 4):
             print("Err with parsing ground truths in video: " + video)
+            # groundtruth_rect.txt doesn't match number of frames in video,
+            # skip this video
             continue
+
+    # initialize results.csv file
+    csv_path = os.path.join(resultsdir, video + "_results.csv")
+    csv = open(csv_path, "w+")
  
     # loop through all frames
     for i in range(num_imgs):
