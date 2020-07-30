@@ -21,7 +21,6 @@
 #
 # Before running
 # Change global variables to correct file paths.
-# Change otb_list to correct list of OTB videos being used.
 
 
 import os
@@ -47,19 +46,17 @@ if on_server:
 else:
     resultsdir = "../OTB_data/results/"
 
-# list of OTB videos to use
-# must correspond to the name of the folder within imdir
-if on_server:
-    otb_list = ["Basketball", "Biker"]
-else:
-    otb_list = ["Basketball", "Biker"]
-
 # size to crop images to (square, height = width)
 crop_size = 256
 
 
 # empty results image directory
 func_file.empty_folder(resultsdir)
+
+# list of OTB videos to use
+otb_list = func_file.get_all_dirs_in(
+    directory=imdir,
+    exclude=["BlurBody"])
 
 # loop through all videos on otb_list
 for video in otb_list:
@@ -73,12 +70,26 @@ for video in otb_list:
     img_list = func_file.get_files_sorted(
         directory=imdir + video + "/img/",
         extension=".jpg")
-    labels = np.genfromtxt(
-        fname=imdir + video + "/groundtruth_rect.txt",
-        dtype="int",
-        delimiter=",")
+    labels_path = os.path.join(imdir + video, "groundtruth_rect.txt")
+    try:
+        labels = np.genfromtxt(
+            fname=labels_path,
+            dtype="int",
+            delimiter=",")
+    except PermissionError:
+        print("permission error reading " + labels_path)
+        continue
     num_imgs = len(img_list)
-    
+    # delimiter could be tab also
+    if labels.shape != (num_imgs, 4):
+        labels = np.genfromtxt(
+            fname=labels_path,
+            dtype="int",
+            delimiter="\t")
+        if labels.shape != (num_imgs, 4):
+            print("Err with parsing ground truths in video: " + video)
+            continue
+ 
     # loop through all frames
     for i in range(num_imgs):
         # load base image path
@@ -122,7 +133,7 @@ for video in otb_list:
         y_center = y_obj + height_obj//2
         x_crop = x_center - crop_size//2
         y_crop = y_center - crop_size//2
-        base_img = cv2.imread(base_path, -1)
+        base_img = cv2.imread(base_path, 1)
         base_img_cropped = func_img.crop_zero_padding(
             img=base_img,
             x_crop=x_crop,
@@ -143,7 +154,7 @@ for video in otb_list:
             x_obj_t, y_obj_t, width_obj_t, height_obj_t = target_label
 
             # crop target
-            target_img = cv2.imread(target_path, -1)
+            target_img = cv2.imread(target_path, 1)
             target_img_cropped = func_img.crop_zero_padding(
                 img=target_img,
                 x_crop=x_crop,
