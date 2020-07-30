@@ -49,7 +49,7 @@ torch.manual_seed(random_seed)
 # paths to csv files
 csv_path_list = func_file.get_files_sorted(directory=datadir, extension=".csv")
 np.random.shuffle(csv_path_list)
-
+ 
 # create pytorch datasets for train, validation, test. split by video
 n_videos = len(csv_path_list)
 n_videos_test = n_videos // 3
@@ -78,14 +78,16 @@ for i, csv_path in enumerate(csv_path_list):
                         [test_set, set_i])
 
 
-# should have correct datasets by now
-print("n_videos: ", n_videos)
-print("n_videos_train: ", n_videos_train)
-print("n_videos_validation: ", n_videos_validation)
-print("n_videos_test: ", n_videos_test)
-print("len(train_set): ", len(train_set))
-print("len(validation_set): ", len(validation_set))
-print("len(test_set): ", len(test_set))
+# 
+print("total videos: ", n_videos)
+print("# training videos:   ", n_videos_train)
+print("# validation videos: ", n_videos_validation)
+print("# testing videos:    ", n_videos_test)
+print("image pairs in train set:      ", len(train_set))
+print("image pairs in validation set: ", len(validation_set))
+print("image pairs in test set:       ", len(test_set), "\n")
+
+
 
 
 

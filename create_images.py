@@ -56,7 +56,7 @@ func_file.empty_folder(resultsdir)
 # list of OTB videos to use
 otb_list = func_file.get_all_dirs_in(
     directory=imdir,
-    exclude=["BlurBody"])
+    exclude=[])
 
 # loop through all videos on otb_list
 for video in otb_list:
