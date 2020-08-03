@@ -56,7 +56,8 @@ func_file.empty_folder(resultsdir)
 # list of OTB videos to use
 otb_list = func_file.get_all_dirs_in(
     directory=imdir,
-    exclude=[])
+    exclude=["Bolt"])
+
 
 # loop through all videos on otb_list
 for video in otb_list:
@@ -155,19 +156,6 @@ for video in otb_list:
             target_path = target_img_paths[j]
             target_label = target_labels[j]
             x_obj_t, y_obj_t, width_obj_t, height_obj_t = target_label
-
-            # crop target
-            target_img = cv2.imread(target_path, 1)
-            target_img_cropped = func_img.crop_zero_padding(
-                img=target_img,
-                x_crop=x_crop,
-                y_crop=y_crop,
-                crop_size=crop_size)
-
-            # save target image
-            target_filename = video + "_t" + str(i) + "_target" + str(j) + ".jpg"
-            target_path_cropped = os.path.join(resultsdir, target_filename)
-            cv2.imwrite(target_path_cropped, target_img_cropped)
             
             # obtain object's motion from base to target (from object center)
             x_center_t = x_obj_t + width_obj_t//2
@@ -175,11 +163,28 @@ for video in otb_list:
             vx = x_center_t - x_center
             vy = y_center_t - y_center
 
-            # add datapoint to csv file
-            csv.write(base_path_cropped + ","
-                      + target_path_cropped + ","
-                      + str(vx) + ","
-                      + str(vy) + "\n")
+            # only add datapoint if vx and vy in range
+            in_range = vx <= 32 and vx >= -32 and vy <= 32 and vy >= -32
+
+            if in_range:
+                # crop target
+                target_img = cv2.imread(target_path, 1)
+                target_img_cropped = func_img.crop_zero_padding(
+                    img=target_img,
+                    x_crop=x_crop,
+                    y_crop=y_crop,
+                    crop_size=crop_size)
+
+                # save target image
+                target_filename = video + "_t" + str(i) + "_target" + str(j) + ".jpg"
+                target_path_cropped = os.path.join(resultsdir, target_filename)
+                cv2.imwrite(target_path_cropped, target_img_cropped)
+            
+                # add datapoint to csv file
+                csv.write(base_path_cropped + ","
+                          + target_path_cropped + ","
+                          + str(vx) + ","
+                          + str(vy) + "\n")
 
 
 
