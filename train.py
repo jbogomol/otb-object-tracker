@@ -22,10 +22,14 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 import numpy as np
+import seaborn as sb
 import os
 
 
 """ GLOBALS """
+# training or just testing
+train_on = False
+
 # on server or local computer
 on_server = torch.cuda.is_available()
 
@@ -137,96 +141,212 @@ print(network, "\n")
 
 
 """ TRAINING LOOP """
-print("BEGIN TRAINING LOOP")
-for epoch in range(n_epochs):
-    running_loss = 0.0
-    for batch_index, batch in enumerate(train_loader, 0):
-        # get inputs and labels
-        inputs, labels = batch
+if train_on:
+    print("BEGIN TRAINING LOOP")
+    for epoch in range(n_epochs):
+        running_loss = 0.0
+        for batch_index, batch in enumerate(train_loader, 0):
+            # get inputs and labels
+            inputs, labels = batch
         
-        # reformat labels
-        labels = labels + 32
-        labels = labels.long()
-        labels_x = func_tensor.saturate_1d(
-            t=labels[:,0], low=0, high=(2 * 32))
-        labels_y = func_tensor.saturate_1d(
-            t=labels[:,1], low=0, high=(2 * 32))
-        if use_gpu:
-            inputs = inputs.cuda()
-            labels = labels.cuda()
-            labels_x = labels_x.cuda()
-            labels_y = labels_y.cuda()
-
-        # zero the gradients
-        optimizer.zero_grad()
-
-        # forward, backward, gradient descent
-        outputs = network(inputs)
-        outputs_x = outputs[:,0,:]
-        outputs_y = outputs[:,1,:]
-        loss_x = F.cross_entropy(outputs_x, labels_x)
-        loss_y = F.cross_entropy(outputs_y, labels_y)
-        loss = loss_x + loss_y
-        loss.backward()
-        optimizer.step()
-
-        # print log
-        running_loss += loss.item()
-        if batch_index % log_interval == log_interval - 1:
-            print("epoch %d,\tbatch %5d,\ttraining loss: %.3f" %
-                  (epoch + 1, batch_index + 1, running_loss / log_interval))
-            running_loss = 0.0
-
-    # end of epoch, print log
-    print("END OF EPOCH " + str(epoch + 1))
-
-    # test on validation set
-    print("Testing on validation set...")
-    correct = 0
-    off_by_one = 0
-    total = n_validation * 2 # count x and y guesses separately
-    with torch.no_grad():
-        for batch in validation_loader:
-            images, labels = batch
+            # reformat labels
+            labels = labels + 32
+            labels = labels.long()
+            labels_x = func_tensor.saturate_1d(
+                t=labels[:,0], low=0, high=(2 * 32))
+            labels_y = func_tensor.saturate_1d(
+                t=labels[:,1], low=0, high=(2 * 32))
             if use_gpu:
-                images = images.cuda()
+                inputs = inputs.cuda()
                 labels = labels.cuda()
-            outputs = network(images)
-            preds = outputs.argmax(dim=2)
-            labels += 32
-            x_diff = preds[:,0] - labels[:,0]
-            y_diff = preds[:,1] - labels[:,1]
-            for i in range(batch_size_validation):
-                error_x = abs(x_diff[i].item())
-                error_y = abs(y_diff[i].item())
+                labels_x = labels_x.cuda()
+                labels_y = labels_y.cuda()
 
-                if error_x < 1:
-                    correct += 1
-                elif error_x < 2:
-                    off_by_one += 1
+            # zero the gradients
+            optimizer.zero_grad()
 
-                if error_y < 1:
-                    correct += 1
-                elif error_y < 2:
-                    off_by_one += 1
+            # forward, backward, gradient descent
+            outputs = network(inputs)
+            outputs_x = outputs[:,0,:]
+            outputs_y = outputs[:,1,:]
+            loss_x = F.cross_entropy(outputs_x, labels_x)
+            loss_y = F.cross_entropy(outputs_y, labels_y)
+            loss = loss_x + loss_y
+            loss.backward()
+            optimizer.step()
+
+            # print log
+            running_loss += loss.item()
+            if batch_index % log_interval == log_interval - 1:
+                print("epoch %d,\tbatch %5d,\ttraining loss: %.3f" %
+                      (epoch + 1, batch_index + 1, running_loss / log_interval))
+                running_loss = 0.0
     
-    print("# correct:\t" + str(correct) + "/" + str(total) + " = "
-          + str(100.0 * correct / total) + "%")
-    print("# off by 1:\t" + str(off_by_one) + "/" + str(total) + " = "
-          + str(100.0 * off_by_one / total) + "%\n")
+        # end of epoch, print log
+        print("END OF EPOCH " + str(epoch + 1))
+
+        # test on validation set
+        print("Testing on validation set...")
+        correct = 0
+        off_by_one = 0
+        total = n_validation * 2 # count x and y guesses separately
+        with torch.no_grad():
+            for batch in validation_loader:
+                images, labels = batch
+                if use_gpu:
+                    images = images.cuda()
+                    labels = labels.cuda()
+                outputs = network(images)
+                preds = outputs.argmax(dim=2)
+                labels += 32
+                x_diff = preds[:,0] - labels[:,0]
+                y_diff = preds[:,1] - labels[:,1]
+                for i in range(batch_size_validation):
+                    error_x = abs(x_diff[i].item())
+                    error_y = abs(y_diff[i].item())
+
+                    if error_x < 1:
+                        correct += 1
+                    elif error_x < 2:
+                        off_by_one += 1
+    
+                    if error_y < 1:
+                        correct += 1
+                    elif error_y < 2:
+                        off_by_one += 1
+    
+        print("# correct:\t" + str(correct) + "/" + str(total) + " = "
+              + str(100.0 * correct / total) + "%")
+        print("# off by 1:\t" + str(off_by_one) + "/" + str(total) + " = "
+              + str(100.0 * off_by_one / total) + "%\n")
 
 
 
-print("FINISHED TRAINING")
-print("SAVING NETWORK")
-torch.save(network.state_dict(), netpath)
+    print("FINISHED TRAINING")
+    print("SAVING NETWORK\n")
+    torch.save(network.state_dict(), netpath)
 
 
+""" TEST NETWORK """
+print("LOADING NETWORK\n")
+if use_gpu:
+    network.load_state_dict(
+        torch.load(netpath, map_location=torch.device("cuda")))
+else:
+    network.load_state_dict(
+        torch.load(netpath, map_location=torch.device("cpu")))
 
+print("TESTING NETWORK ON TEST SET")
+correct = 0
+errcount = 0
+total = n_test * 2
+heatmap = []
+errmap = np.zeros([32 * 2 + 1, 32 * 2 + 1])
 
+# empty error directory to fill with new errors
+errdir = os.path.join(reportdir, "errors/")
+func_file.empty_folder(errdir)
 
+with torch.no_grad():
+    for batch in test_loader:
+        images, labels = batch
+        if use_gpu:
+            images = images.cuda()
+            labels = labels.cuda()
+        outputs = network(images)
+        preds = outputs.argmax(dim=2)
+        labels += 32
+        x_diff = preds[:,0] - labels[:,0]
+        y_diff = preds[:,1] - labels[:,1]
+        for i in range(batch_size_test):
+            heatmap.append([x_diff[i].item(), y_diff[i].item()])
+            error_x = abs(x_diff[i].item())
+            error_y = abs(y_diff[i].item())
+            error = error_x + error_y
+            errmap[labels[i, 1], labels[i, 0]] += error
 
+            if error_x < 1:
+                correct += 1
+            if error_y < 1:
+                correct += 1
 
+            if error > 1:
+                """
+                # if vector v predicted incorrectly
+                # get actual and predicted vx, vy
+                pred = preds[i] - 32
+                label = labels[i] - 32
+                vxp = pred[0].item()
+                vyp = pred[1].item()
+                vx = label[0].item()
+                vy = label[1].item()
+
+                # load image to draw bounding boxes on
+                images = images.cpu()
+                img = images[0].numpy()
+                img_target = img[3:,:,:]
+                img_target = np.transpose(img_target, (1, 2, 0))
+                img_target = cv2.resize(img_target, (256, 256))
+                img_target = img_target.astype("uint8")
+
+                # draw the bounding boxes
+                # actual in green, predicted in blue
+                img_rect = cv2.rectangle(
+                    img=img_target,
+                    pt1=(32*2 + vx, 32*2 + vy),
+                    pt2=(32*2 + vx + TARGET SIZE X, 32*2 + vy + TARGET SIZE Y), # TODO
+                    color=(0, 255, 0),
+                    thickness=1)
+                img_rect = cv2.rectangle(
+                    img=img_rect,
+                    pt1=(32*2 + vxp, 32*2 + vyp),
+                    pt2=(32*2 + vxp + TARGET SIZE X, 32*2 + vyp + TARGET SIZE Y), # TODO
+                    color=(255, 0, 0),
+                    thickness=1)
+
+                # save error image, increment error count
+                img_name= "err_" + str(errcount) + ".jpg"
+                cv2.imwrite(os.path.join(errdir, img_name), img_rect)
+                """
+                errcount += 1
+
+print("# correct:\t" + str(correct) + "/" + str(total) + " = "
+      + str(100.0*correct/total) + "%")
+# print(str(errcount) " errors saved to " + errdir)
+# print("predicted box in blue, correct in green")
+
+# save heat map on test data
+heatmap = np.array(heatmap)
+columns = ["X error (prediction - label)", "Y error (prediction - label)"]
+heatmap_df = pd.DataFrame(data=heatmap, columns=columns)
+plt.figure()
+heatmap_plot = sb.jointplot(
+    x="X error (prediction - label)",
+    y="Y error (prediction - label)",
+    data=heatmap_df,
+    kind="scatter")
+plt.title("Heat map on training data")
+plt.savefig(os.path.join(reportdir, "heatmap.png"))
+
+# save error map on test data
+plt.figure()
+plt.imshow(errmap, interpolation="nearest")
+plt.xlabel("X-component of object motion (ground truth)")
+plt.ylabel("Y-component of object motion (ground truth)")
+plt.title("Sum of |ex| + |ey| on all images in test set")
+# create ticks vector
+ticks = []
+for i in range(-32, 33):
+    if i % 8 == 0:
+        ticks.append(i)
+    else:
+        ticks.append(None)
+plt.xticks(range(65), ticks)
+plt.yticks(range(65), ticks)
+plt.colorbar()
+plt.savefig(os.path.join(reportdir, "errmap.png"))
+
+print("Heat map and error map saved to" + reportdir + "\n")
 
 
 
