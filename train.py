@@ -22,6 +22,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sb
 import os
 
@@ -256,6 +258,7 @@ with torch.no_grad():
         outputs = network(images)
         preds = outputs.argmax(dim=2)
         labels += 32
+        labels_int = labels.round().int()
         x_diff = preds[:,0] - labels[:,0]
         y_diff = preds[:,1] - labels[:,1]
         for i in range(batch_size_test):
@@ -263,7 +266,8 @@ with torch.no_grad():
             error_x = abs(x_diff[i].item())
             error_y = abs(y_diff[i].item())
             error = error_x + error_y
-            errmap[labels[i, 1], labels[i, 0]] += error
+
+            errmap[labels_int[i, 1], labels_int[i, 0]] += error
 
             if error_x < 1:
                 correct += 1
