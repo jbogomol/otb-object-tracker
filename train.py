@@ -329,7 +329,6 @@ heatmap_plot = sb.jointplot(
     y="Y error (prediction - label)",
     data=heatmap_df,
     kind="scatter")
-plt.title("Heat map on training data")
 plt.savefig(os.path.join(reportdir, "heatmap.png"))
 
 # save error map on test data
