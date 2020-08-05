@@ -39,6 +39,9 @@ save_errors = True
 # maximum number of errors to save
 max_errors = 50
 
+# threshold for saving an error
+error_thresh = 10
+
 # on server or local computer
 on_server = torch.cuda.is_available()
 
@@ -282,7 +285,7 @@ with torch.no_grad():
             if error_y < 1:
                 correct += 1
 
-            if save_errors and errcount < max_errors and error > 1:
+            if save_errors and errcount < max_errors and error > error_thresh:
                 # if vector v predicted incorrectly
                 # get actual and predicted vx, vy
                 pred = preds[i] - 32
