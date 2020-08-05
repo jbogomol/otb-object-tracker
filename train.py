@@ -243,7 +243,8 @@ correct = 0
 errcount = 0
 total = n_test * 2
 heatmap = []
-errmap = np.zeros([32 * 2 + 1, 32 * 2 + 1])
+errmap = np.zeros([32*2 + 1, 32*2 + 1])
+count = np.zeros([32*2 + 1, 32*2 + 1])
 
 # empty error directory to fill with new errors
 errdir = os.path.join(reportdir, "errors/")
@@ -266,8 +267,8 @@ with torch.no_grad():
             error_x = abs(x_diff[i].item())
             error_y = abs(y_diff[i].item())
             error = error_x + error_y
-
             errmap[labels_int[i, 1], labels_int[i, 0]] += error
+            count[labels_int[i, 1], labels_int[i, 0]] += 1
 
             if error_x < 1:
                 correct += 1
@@ -350,6 +351,17 @@ plt.colorbar()
 plt.savefig(os.path.join(reportdir, "errmap.png"))
 
 print("Heat map and error map saved to" + reportdir + "\n")
+
+# save count heatmap as well
+plt.figure()
+plt.imshow(count, interpolation="nearest")
+plt.xlabel("X-component of object motion")
+plt.ylabel("Y-component of object motion")
+plt.title("# of times object motion vector is seen in test data")
+plt.xticks(range(65), ticks)
+plt.yticks(range(65), ticks)
+plt.colorbar()
+plt.savefig(os.path.join(reportdir, "cnt.png"))
 
 
 
