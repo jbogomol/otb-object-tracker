@@ -301,23 +301,29 @@ with torch.no_grad():
                 img_target = img_target.astype("uint8")
 
                 # draw the bounding boxes
-                # actual in green, predicted in blue
-                img_line = cv2.arrowedLine(
+                # actual in green, predicted in blue, center in red
+                img_err = cv2.circle(
                     img=img_target,
-                    pt1=(128, 128),
-                    pt2=(128 + int(round(vx)), 128 + int(round(vy))),
+                    center=(128, 128),
+                    radius=3,
+                    color=(0, 0, 255),
+                    thickness=1)
+                img_err = cv2.circle(
+                    img=img_err,
+                    center=(128 + int(round(vx)), 128 + int(round(vy))),
+                    radius=3,
                     color=(0, 255, 0),
                     thickness=1)
-                img_line = cv2.arrowedLine(
-                    img=img_line,
-                    pt1=(128,128),
-                    pt2=(128 + vxp, 128 + vyp),
+                img_err = cv2.circle(
+                    img=img_err,
+                    center=(128 + vxp, 128 + vyp),
+                    radius=3,
                     color=(255, 0, 0),
                     thickness=1)
 
                 # save error image, increment error count
                 img_name= "err_" + str(errcount) + ".jpg"
-                cv2.imwrite(os.path.join(errdir, img_name), img_line)
+                cv2.imwrite(os.path.join(errdir, img_name), img_err)
                 errcount += 1
 
 print("# correct:\t" + str(correct) + "/" + str(total) + " = "
