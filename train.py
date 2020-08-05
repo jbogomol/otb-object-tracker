@@ -34,7 +34,10 @@ import os
 train_on = False
 
 # save images with arrows showing actual & predicted motion
-save_errors
+save_errors = True
+
+# maximum number of errors to save
+max_errors = 50
 
 # on server or local computer
 on_server = torch.cuda.is_available()
@@ -279,7 +282,7 @@ with torch.no_grad():
             if error_y < 1:
                 correct += 1
 
-            if save_errors and error > 1:
+            if save_errors and errcount < max_errors and error > 1:
                 # if vector v predicted incorrectly
                 # get actual and predicted vx, vy
                 pred = preds[i] - 32
@@ -320,7 +323,7 @@ with torch.no_grad():
 print("# correct:\t" + str(correct) + "/" + str(total) + " = "
       + str(100.0*correct/total) + "%")
 if save_errors:
-    print(str(errcount) " errors saved to " + errdir)
+    print(str(errcount) + " errors saved to " + errdir)
     print("predicted box in blue, correct in green")
 
 # save heat map on test data
