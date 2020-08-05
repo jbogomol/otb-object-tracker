@@ -21,6 +21,7 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -31,6 +32,9 @@ import os
 """ GLOBALS """
 # training or just testing
 train_on = False
+
+# save images with arrows showing actual & predicted motion
+save_errors
 
 # on server or local computer
 on_server = torch.cuda.is_available()
@@ -275,8 +279,7 @@ with torch.no_grad():
             if error_y < 1:
                 correct += 1
 
-            if error > 1:
-                """
+            if save_errors and error > 1:
                 # if vector v predicted incorrectly
                 # get actual and predicted vx, vy
                 pred = preds[i] - 32
@@ -296,29 +299,29 @@ with torch.no_grad():
 
                 # draw the bounding boxes
                 # actual in green, predicted in blue
-                img_rect = cv2.rectangle(
+                img_line = cv2.arrowedLine(
                     img=img_target,
-                    pt1=(32*2 + vx, 32*2 + vy),
-                    pt2=(32*2 + vx + TARGET SIZE X, 32*2 + vy + TARGET SIZE Y), # TODO
+                    pt1=(128, 128),
+                    pt2=(128 + int(round(vx)), 128 + int(round(vy))),
                     color=(0, 255, 0),
                     thickness=1)
-                img_rect = cv2.rectangle(
-                    img=img_rect,
-                    pt1=(32*2 + vxp, 32*2 + vyp),
-                    pt2=(32*2 + vxp + TARGET SIZE X, 32*2 + vyp + TARGET SIZE Y), # TODO
+                img_line = cv2.arrowedLine(
+                    img=img_line,
+                    pt1=(128,128),
+                    pt2=(128 + vxp, 128 + vyp),
                     color=(255, 0, 0),
                     thickness=1)
 
                 # save error image, increment error count
                 img_name= "err_" + str(errcount) + ".jpg"
-                cv2.imwrite(os.path.join(errdir, img_name), img_rect)
-                """
+                cv2.imwrite(os.path.join(errdir, img_name), img_line)
                 errcount += 1
 
 print("# correct:\t" + str(correct) + "/" + str(total) + " = "
       + str(100.0*correct/total) + "%")
-# print(str(errcount) " errors saved to " + errdir)
-# print("predicted box in blue, correct in green")
+if save_errors:
+    print(str(errcount) " errors saved to " + errdir)
+    print("predicted box in blue, correct in green")
 
 # save heat map on test data
 heatmap = np.array(heatmap)
