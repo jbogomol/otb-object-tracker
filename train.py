@@ -40,7 +40,7 @@ save_errors = True
 max_errors = 50
 
 # threshold for saving an error
-error_thresh = 10
+error_thresh = 1
 
 # on server or local computer
 on_server = torch.cuda.is_available()
