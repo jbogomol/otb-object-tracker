@@ -34,7 +34,7 @@ import os
 train_on = False
 
 # save images with arrows showing actual & predicted motion
-save_errors = True
+save_errors = False
 
 # maximum number of errors to save
 max_errors = 50
@@ -346,6 +346,11 @@ heatmap_plot = sb.jointplot(
     data=heatmap_df,
     kind="scatter")
 plt.savefig(os.path.join(reportdir, "heatmap.png"))
+# standard deviations
+sdx = heatmap_df.loc[:,"X error (prediction - label)"].std()
+sdy = heatmap_df.loc[:,"Y error (prediction - label)"].std()
+print("Standard deviation of X error: ", sdx)
+print("Standard deviation of Y error: ", sdy)
 
 # save error map on test data
 plt.figure()
