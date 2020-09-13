@@ -116,7 +116,7 @@ print("image pairs in validation set: ", n_validation)
 print("image pairs in test set:       ", n_test, "\n")
 
 # network hyperparameters
-n_epochs = 50
+n_epochs = 4
 learning_rate = 0.001
 momentum = 0.9
 batch_size_train = 64
